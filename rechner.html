@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Marge Rechner</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef2f7;
+  color:#1f2937;
+  padding:14px;
+}
+.card{
+  max-width:980px;
+  margin:0 auto;
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 6px 24px rgba(0,0,0,.1);
+}
+h2{
+  text-align:center;
+  margin:0 0 12px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+label{
+  font-size:13px;
+  font-weight:600;
+}
+input{
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  border-radius:10px;
+  border:1px solid #cbd5e1;
+  background:#f9fafb;
+}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}
+}
+
+.table-wrap{
+  overflow-x:auto;
+  margin-top:14px;
+}
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:520px;
+}
+th,td{
+  border:1px solid #e5e7eb;
+  padding:10px;
+  text-align:center;
+  font-size:14px;
+}
+th{
+  background:#0ea5e9;
+  color:#fff;
+}
+.highlight{
+  background:#f0f9ff;
+  font-weight:700;
+  color:#0369a1;
+}
+.note{
+  text-align:center;
+  font-size:13px;
+  color:#6b7280;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+
+<h2>📊 Marge Rechner</h2>
+
+<div class="grid">
+  <div>
+    <label>Marktpreis (€)</label>
+    <input id="marktpreis" type="number" value="10" step="0.01" oninput="calc()">
+  </div>
+  <div>
+    <label>Einkauf (% vom Marktpreis)</label>
+    <input id="ekp" type="number" value="70" step="1" oninput="calc()">
+  </div>
+  <div>
+    <label>Versandkosten (€)</label>
+    <input id="versand" type="number" value="1.15" step="0.01" oninput="calc()">
+  </div>
+  <div>
+    <label>eBay Fixgebühr (€)</label>
+    <input id="fix" type="number" value="0.35" step="0.01" oninput="calc()">
+  </div>
+  <div>
+    <label>eBay Provision (%)</label>
+    <input id="prov" type="number" value="16" step="0.1" oninput="calc()">
+  </div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Plattform</th>
+<th>VK (€)</th>
+<th>Gebühren (€)</th>
+<th>Gewinn (€)</th>
+<th>Marge</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eBay</td>
+<td class="highlight" id="vk30">-</td>
+<td id="geb30">-</td>
+<td id="gew30">-</td>
+<td>30%</td>
+</tr>
+<tr>
+<td>eBay</td>
+<td class="highlight" id="vk40">-</td>
+<td id="geb40">-</td>
+<td id="gew40">-</td>
+<td>40%</td>
+</tr>
+<tr>
+<td>Cardmarket</td>
+<td class="highlight" id="cm30">-</td>
+<td id="cmg30">-</td>
+<td id="cmw30">-</td>
+<td>30%</td>
+</tr>
+<tr>
+<td>Cardmarket</td>
+<td class="highlight" id="cm40">-</td>
+<td id="cmg40">-</td>
+<td id="cmw40">-</td>
+<td>40%</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+eBay: Provision + Fix + 19% MwSt + Versand<br>
+Cardmarket: nur 5% Provision
+</div>
+
+</div>
+
+<script>
+function f(n){return isFinite(n)?n.toFixed(2):"—"}
+
+function calc(){
+  const mp=+marktpreis.value||0
+  const ek=mp*(+ekp.value/100)
+  const ship=+versand.value||0
+  const fixf=+fix.value||0
+  const p=+prov.value/100
+  const mwst=0.19
+
+  function ebayVK(m){
+    let vk=ek+ship+1
+    for(let i=0;i<30;i++){
+      const fees=((vk*p)+fixf)*(1+mwst)
+      vk=(ek+ship+fees)/(1-m)
+    }
+    return vk
+  }
+  function ebayRes(vk){
+    const fees=((vk*p)+fixf)*(1+mwst)+ship
+    return [fees,vk-fees-ek]
+  }
+
+  const v30=ebayVK(.3),r30=ebayRes(v30)
+  const v40=ebayVK(.4),r40=ebayRes(v40)
+
+  vk30.textContent=f(v30); geb30.textContent=f(r30[0]); gew30.textContent=f(r30[1])
+  vk40.textContent=f(v40); geb40.textContent=f(r40[0]); gew40.textContent=f(r40[1])
+
+  const cmFee=.05
+  const cmVK=(m)=>ek/(1-m-cmFee)
+
+  const c30=cmVK(.3), c40=cmVK(.4)
+  cm30.textContent=f(c30); cmg30.textContent=f(c30*.05); cmw30.textContent=f(c30-c30*.05-ek)
+  cm40.textContent=f(c40); cmg40.textContent=f(c40*.05); cmw40.textContent=f(c40-c40*.05-ek)
+}
+calc()
+</script>
+
+</body>
+</html>
